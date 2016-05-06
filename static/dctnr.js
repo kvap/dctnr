@@ -21,7 +21,7 @@ function get(url, c_ok, c_fail) {
 }
 
 function search(phrase, c_ok, c_fail) {
-	var url = '/search?phrase=' + encodeURI(phrase);
+	var url = '/search?phrase=' + encodeURIComponent(phrase);
 	console.log('querying ' + url);
 	get(url, c_ok, c_fail);
 }
