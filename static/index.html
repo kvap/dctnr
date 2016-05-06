@@ -1,0 +1,32 @@
+<html>
+	<form id="input">
+		<div>
+			<label for="input-term">Phrase</label><br>
+			<input id="input-term" type="text">
+		</div>
+		<div>
+			<label for="input-src">From</label><br>
+			<input id="input-src" type="text">
+		</div>
+		<div>
+			<label for="input-dst">To</label><br>
+			<input id="input-dst" type="text">
+		</div>
+		<input type="submit" value="Submit">
+	</form>
+
+	<div id="output">
+	</div>
+
+	<script>
+		var input = document.getElementById('input');
+		var output = document.getElementById('output');
+
+		function handleSubmit(evt) {
+			evt.preventDefault();
+			output.innerHTML = 'hello world';
+		}
+
+		input.addEventListener('submit', handleSubmit, false);
+	</script>
+</html>
