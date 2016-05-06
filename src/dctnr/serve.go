@@ -30,21 +30,23 @@ func (c *Context) SetHelloCount(rw web.ResponseWriter, req *web.Request, next we
 }
 
 func (c *Context) SayHello(rw web.ResponseWriter, req *web.Request) {
-	fmt.Print(strings.Repeat("Hello ", c.HelloCount), "World! ")
+	fmt.Println(strings.Repeat("Hello ", c.HelloCount), "World! ")
 }
 
 func (c *Context) Search(rw web.ResponseWriter, req *web.Request) {
 	phrase := req.URL.Query().Get("phrase");
 	rw.WriteHeader(http.StatusOK);
-	rw.Write([]byte("your phrase was: '" + phrase + "'"));
+	reply := "your phrase was: '" + phrase + "'";
+	fmt.Println(reply);
+	rw.Write([]byte(reply));
 }
 
 func (c *Context) Stats(rw web.ResponseWriter, req *web.Request) {
-	fmt.Print(strings.Repeat("Stats ", c.HelloCount), "World! ")
+	fmt.Println(strings.Repeat("Stats ", c.HelloCount), "World! ")
 }
 
 func (c *Context) Main(rw web.ResponseWriter, req *web.Request) {
-	fmt.Print(strings.Repeat("Main ", c.HelloCount), "World! ")
+	fmt.Println(strings.Repeat("Main ", c.HelloCount), "World! ")
 }
 
 func main() {
