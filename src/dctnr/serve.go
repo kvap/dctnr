@@ -36,7 +36,7 @@ func (c *Context) SayHello(rw web.ResponseWriter, req *web.Request) {
 func (c *Context) Search(rw web.ResponseWriter, req *web.Request) {
 	phrase := req.URL.Query().Get("phrase");
 	rw.WriteHeader(http.StatusOK);
-	rw.Write([]byte(phrase));
+	rw.Write([]byte("your phrase was: '" + phrase + "'"));
 }
 
 func (c *Context) Stats(rw web.ResponseWriter, req *web.Request) {
