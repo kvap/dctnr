@@ -7,3 +7,106 @@
 	bottom: 0;
 	background: rgba(0, 0, 0, 0.5);
 }
+
+body {
+	background: #444;
+	margin: 0;
+	padding: 0;
+}
+
+#header.maximized {
+	height: 100%;
+}
+
+#header {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 120px;
+
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.3s;
+}
+
+#input {
+	margin: 0;
+	width: 400px;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+}
+
+#input > div {
+	display: flex;
+	align-items: stretch;
+}
+
+#input-src, #input-dst {
+	width: 50px;
+}
+
+#input > div > input[type="submit"] {
+	flex-grow: 1;
+}
+
+#input input {
+	height: 40px;
+	border: none;
+	border-radius: 5px;
+	margin: 2px;
+	transition: all 0.3s;
+}
+
+#input input:hover,
+#input input:focus {
+	box-shadow: 0px 0px 5px white;
+}
+
+#input input[type="text"] {
+	background-color: white;
+	padding: 0px 10px;
+}
+
+#input input[type="submit"] {
+	font-weight: bold;
+	background-color: #55f;
+	color: white;
+	cursor: pointer;
+}
+
+#input input[type="submit"]:hover,
+#input input[type="submit"]:focus {
+	background-color: white;
+	color: #55f;
+}
+
+:focus {
+	outline: none;
+}
+
+::-moz-focus-inner {
+	border: none;
+}
+
+#output {
+	display: none;
+	background: white;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 120px;
+	width: 395px;
+	border-radius: 5px;
+	padding: 10px;
+	box-sizing: border-box;
+}
+
+#output > p:first-of-type {
+	margin-top: 0;
+}
+
+#output > p:last-of-type {
+	margin-bottom: 0;
+}

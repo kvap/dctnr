@@ -5,24 +5,17 @@
 	</head>
 
 	<body>
-		<form id="input">
-			<div>
-				<label for="input-phrase">Phrase</label><br>
+		<div id="header" class="maximized">
+			<form id="input">
 				<input id="input-phrase" type="text">
-			</div>
 
-			<div>
-				<label for="input-src">From</label><br>
-				<input id="input-src" type="text">
-			</div>
-
-			<div>
-				<label for="input-dst">To</label><br>
-				<input id="input-dst" type="text">
-			</div>
-
-			<input type="submit" value="Submit">
-		</form>
+				<div>
+					<input id="input-src" type="text">
+					<input type="submit" value="Search">
+					<input id="input-dst" type="text">
+				</div>
+			</form>
+		</div>
 
 		<div id="output"></div>
 		<div id="veil"></div>
