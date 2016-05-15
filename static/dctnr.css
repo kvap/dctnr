@@ -44,15 +44,13 @@ body {
 	align-items: stretch;
 }
 
-#input-src, #input-dst {
-	width: 50px;
-}
-
 #input > div > input[type="submit"] {
 	flex-grow: 1;
 }
 
-#input input {
+#input input,
+#input select {
+	background: white;
 	height: 40px;
 	border: none;
 	border-radius: 5px;
@@ -61,7 +59,9 @@ body {
 }
 
 #input input:hover,
-#input input:focus {
+#input input:focus,
+#input select:hover,
+#input select:focus {
 	box-shadow: 0px 0px 5px white;
 }
 
