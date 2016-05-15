@@ -11,12 +11,11 @@ var conn *sql.DB
 
 func Init() error {
 	var err error
-	conn, err = sql.Open("postgres", "user=dctnr dbname=dctnr sslmode=disable")
+	conn, err = sql.Open("postgres", "user=dctnr password=dctnr dbname=dctnr sslmode=disable")
 	if err != nil {
 		fmt.Println("could not connect to db")
 		return err
 	}
-	fmt.Println("db connection established")
 	return nil
 }
 

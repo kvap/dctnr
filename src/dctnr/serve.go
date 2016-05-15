@@ -1,11 +1,12 @@
 package main
 
 import (
-	"time"
 	"fmt"
 	"strings"
 	"golang.org/x/net/html"
 	"bytes"
+	"errors"
+//	"time"
 	"net/http"
 	"net/url"
 	"encoding/json"
@@ -27,69 +28,31 @@ func (c *Context) PingDB(rw web.ResponseWriter, req *web.Request, next web.NextM
 	next(rw, req)
 }
 
-func (c *Context) SetHelloCount(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	time.Sleep(1000 * time.Millisecond)
-	c.HelloCount = 3
-	next(rw, req)
+type ApiLangLink struct {
+	Lang  string `json:"lang"`
+	Title string `json:"title"`
 }
 
-func (c *Context) SayHello(rw web.ResponseWriter, req *web.Request) {
-	fmt.Println(strings.Repeat("Hello ", c.HelloCount), "World! ")
+type ApiPage struct {
+	Pageid    int           `json:"pageid"`
+	Title     string        `json:"title"`
+	Langlinks []ApiLangLink `json:"langlinks"`
+	Extract   string        `json:"extract"`
 }
 
-func deepGet(obj interface{}, path ...interface{}) (interface{}, bool) {
-	var val interface{} = obj
-
-	for _, keystr := range path {
-		if key, ok := keystr.(int); ok {
-			if arr, ok := val.([]interface{}); ok {
-				val = arr[key];
-			} else {
-				return val, false;
-			}
-		} else if key, ok := keystr.(string); ok {
-			if m, ok := val.(map[string]interface{}); ok {
-				val = m[key];
-			} else {
-				return val, false;
-			}
-		}
-	}
-
-	return val, true
+type ApiFromTo struct {
+	From string `json:"from"`
+	To   string `json:"to"`
 }
 
-type LL struct {
-	Lang      string `json:"lang"`
-	URL       string `json:"url"`
-	Langname  string `json:"langname"`
-	Autonym   string `json:"autonym"`
-	Autotitle string `json:"*"`
-}
-
-type LLPage struct {
-	Pageid    int    `json:"pageid"`
-	Title     string `json:"title"`
-	Langlinks []LL   `json:"langlinks"`
-}
-
-type LLResponse struct {
+type ApiResponse struct {
+	Complete bool `json:"batchcomplete"`
 	Query struct {
-		Normalized struct {
-			From string            `json:"from"`
-			To   string            `json:"to"`
-		} `json:"normalized"`
-		Pages        map[string]LLPage `json:"pages"`
+		Normalized []ApiFromTo `json:"normalized"`
+		Redirects  []ApiFromTo `json:"redirects"`
+		Pages      []ApiPage   `json:"pages"`
 	} `json:"query"`
 }
-
-//func fetchArticle(url string) (io.Reader, error) {
-//	res, err := http.Get(url)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return res.Body, nil
-//}
 
 func getElementById(node *html.Node, id string) *html.Node {
 	if node.Type == html.ElementNode {
@@ -124,82 +87,109 @@ func renderNode(node *html.Node) (string, error) {
 	return buf.String(), nil
 }
 
-func getFirstParagraph(url string) (string, error) {
-	res, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
-
-	root, err := html.Parse(res.Body)
-	if err != nil {
-		return "", err
-	}
-
-	if c := getElementById(root, "mw-content-text"); c != nil {
-		if p := getChildByTag(c, "p"); p != nil {
-			return renderNode(p)
-		}
-	}
-
-	return "", nil
-}
-
-func fetchLanguages(phrase string, src string, dst string) (string, int) {
-	q := url.Values{}
-	q.Set("action", "query")
-	q.Set("prop", "langlinks")
-	q.Set("format", "json")
-	q.Set("lllang", dst)
-	q.Set("llprop", "url|langname|autonym")
-	q.Set("titles", phrase)
-
-	url := fmt.Sprintf(
+func apiCall(q *url.Values, langcode string) (*ApiResponse, error) {
+	absurl := fmt.Sprintf(
 		"https://%s.wikipedia.org/w/api.php?%s",
-		src, q.Encode(),
+		langcode, q.Encode(),
 	)
 
-	fmt.Println("getting " + url)
+	fmt.Println("getting " + absurl)
 
-	res, err := http.Get(url)
+	res, err := http.Get(absurl)
 	if err != nil {
-		return "something went wrong", 500
+		return nil, err
 	}
 
 	code := res.StatusCode
-
 	if code != 200 {
-		return "wrong return code during article fetching", code
+		return nil, errors.New("'not OK' response from wikipedia")
 	}
 
 	dec := json.NewDecoder(res.Body)
-	var resp LLResponse
-	err = dec.Decode(&resp);
+	var resp ApiResponse
+	err = dec.Decode(&resp)
 	if err != nil {
-		return "something went wrong during response decoding", 500
+		return nil, err
 	}
 
-	var result string
+	return &resp, nil
+}
+
+func getFirstParagraph(title string, langcode string) (string, error) {
+	q := url.Values{}
+
+	q.Set("format", "json")
+	q.Set("formatversion", "2")
+	q.Set("redirects", "")
+
+	q.Set("action", "query")
+	q.Set("prop", "extracts")
+	q.Set("exintro", "")
+	q.Set("exchars", "1024")
+	q.Set("titles", title)
+
+	resp, err := apiCall(&q, langcode)
+	if err != nil {
+		return "", err
+	}
 
 	for _, page := range resp.Query.Pages {
+		return page.Extract, nil
+	}
+
+	return "", errors.New("no page found")
+}
+
+func translateTitle(title string, src string, dst string) ([]string, error) {
+	q := url.Values{}
+
+	q.Set("format", "json")
+	q.Set("formatversion", "2")
+	q.Set("redirects", "")
+
+	q.Set("action", "query")
+	q.Set("prop", "langlinks")
+	q.Set("lllang", dst)
+	q.Set("titles", title)
+
+	resp, err := apiCall(&q, src)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]string, 0)
+	for _, page := range resp.Query.Pages {
 		for _, link := range page.Langlinks {
-			p, err := getFirstParagraph(link.URL)
-			if err != nil {
-				result += "\nerror"
-			}
-			result += "\n" + p
+			result = append(result, link.Title)
 		}
 	}
 
-	return result, code
+	return result, nil
 }
 
 func (c *Context) Search(rw web.ResponseWriter, req *web.Request) {
 	q := req.URL.Query()
-	phrase := q.Get("phrase")
+	srctitle := q.Get("phrase")
 	src := q.Get("src")
 	dst := q.Get("dst")
-	reply, code := fetchLanguages(phrase, src, dst)
-	rw.WriteHeader(code)
+
+	dsttitles, err := translateTitle(srctitle, src, dst)
+	if err != nil {
+		rw.WriteHeader(500)
+		return
+	}
+
+	var reply string
+	for _, t := range dsttitles {
+		p, err := getFirstParagraph(t, dst)
+		if err != nil {
+			reply += err.Error()
+		} else {
+			reply += p
+		}
+	}
+
+	rw.WriteHeader(200)
 	rw.Write([]byte(reply))
 }
 
@@ -212,13 +202,7 @@ func (c *Context) Main(rw web.ResponseWriter, req *web.Request) {
 }
 
 func main() {
-	for {
-		err := db.Init()
-		if err == nil {
-			break
-		}
-		fmt.Println(err)
-	}
+	db.Init()
 
 	router := web.New(Context{})
 
@@ -226,13 +210,10 @@ func main() {
 	router.Middleware(web.ShowErrorsMiddleware)
 	router.Middleware(web.StaticMiddleware("static"))
 	router.Middleware((*Context).PingDB)
-	router.Middleware((*Context).SetHelloCount)
 
 	router.Get("/search", (*Context).Search)
 	router.Get("/stats", (*Context).Stats)
 	router.Get("/", (*Context).Main)
-
-	router.Get("/hello", (*Context).SayHello)
 
 	fmt.Println("starting the listener")
 	err := http.ListenAndServe("0.0.0.0:4000", router)
