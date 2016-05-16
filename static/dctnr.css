@@ -33,7 +33,7 @@ body {
 
 #input {
 	margin: 0;
-	width: 400px;
+	width: 404px;
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
@@ -93,20 +93,55 @@ body {
 
 #output {
 	display: none;
-	background: white;
 	margin-left: auto;
 	margin-right: auto;
 	margin-top: 120px;
-	width: 395px;
-	border-radius: 5px;
-	padding: 10px;
-	box-sizing: border-box;
+	width: 400px;
 }
 
-#output > p:first-of-type {
+#output > a {
+	display: block;
+	background: white;
+	margin-bottom: 10px;
+	border-radius: 5px;
+	padding: 10px;
+	text-decoration: none;
+	color: black;
+	transition: all 0.3s;
+	position: relative;
+}
+
+#output > a:hover,
+#output > a:focus {
+	background-color: #ffa;
+	box-shadow: 0px 0px 5px white;
+}
+
+#output > a > p:first-of-type {
 	margin-top: 0;
 }
 
-#output > p:last-of-type {
+#output > a > p:last-of-type {
 	margin-bottom: 0;
+}
+
+#output {
+	counter-reset: output-counter;
+}
+
+#output > a:before {
+	position: absolute;
+	right: 400px;
+	top: 0px;
+	margin: 10px;
+	color: white;
+	font-weight: bold;
+	font-size: 20px;
+	content: counter(output-counter);
+	counter-increment: output-counter;
+}
+
+#output > a:hover:before,
+#output > a:focus:before {
+	color: #ffa;
 }

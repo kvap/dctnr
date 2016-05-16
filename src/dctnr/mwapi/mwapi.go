@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"net/url"
 	"net/http"
+	"strconv"
 	"fmt"
 	"errors"
+	"strings"
 )
 
 type ApiLangLink struct {
@@ -34,6 +36,13 @@ type ApiResponse struct {
 	} `json:"query"`
 }
 
+type Language struct {
+	Langcode string
+	Autonym  string
+}
+
+var languages *map[string]string
+
 func apiCall(q *url.Values, langcode string) (*ApiResponse, error) {
 	absurl := fmt.Sprintf(
 		"https://%s.wikipedia.org/w/api.php?%s",
@@ -48,7 +57,7 @@ func apiCall(q *url.Values, langcode string) (*ApiResponse, error) {
 	}
 
 	code := res.StatusCode
-	if code != 200 {
+	if code != http.StatusOK {
 		return nil, errors.New("'not OK' response from wikipedia")
 	}
 
@@ -62,7 +71,26 @@ func apiCall(q *url.Values, langcode string) (*ApiResponse, error) {
 	return &resp, nil
 }
 
-func GetFirstParagraph(title string, langcode string) (string, error) {
+func GetLanguages() (*map[string]string, error) {
+	if languages == nil {
+		ls := make(map[string]string)
+		ls["en"] = "English"
+		ls["ru"] = "Russian"
+		languages = &ls
+//		q := url.Values{}
+//
+//		q.Set("format", "json")
+//		q.Set("formatversion", "2")
+//
+//		q.Set("action", "languagesearch")
+//
+//		resp, err := apiCall(&q, langcode)
+//		apiCall(&q, "en")
+	}
+	return languages, nil
+}
+
+func GetFirstParagraph(title string, langcode string) ([]string, error) {
 	q := url.Values{}
 
 	q.Set("format", "json")
@@ -77,17 +105,33 @@ func GetFirstParagraph(title string, langcode string) (string, error) {
 
 	resp, err := apiCall(&q, langcode)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
+	result := make([]string, 0)
 	for _, page := range resp.Query.Pages {
-		return page.Extract, nil
-	}
+		fmt.Printf("page: %d: %s\n", page.Pageid, page.Title)
 
-	return "", errors.New("no page found")
+		absurl := fmt.Sprintf(
+			"https://%s.wikipedia.org/wiki/%s",
+			langcode, page.Title,
+		)
+
+		trimmed := strings.TrimSuffix(page.Extract, "…")
+		if trimmed == "" {
+			trimmed = page.Title
+		}
+
+		wrapped := fmt.Sprintf(
+			"<a href=\"%s\">%s</a>",
+			absurl, trimmed,
+		)
+		result = append(result, wrapped)
+	}
+	return result, nil
 }
 
-func TranslateTitle(title string, src string, dst string) ([]string, error) {
+func SearchLanglinks(phrase, src, dst string, limit int) ([]string, error) {
 	q := url.Values{}
 
 	q.Set("format", "json")
@@ -95,9 +139,11 @@ func TranslateTitle(title string, src string, dst string) ([]string, error) {
 	q.Set("redirects", "")
 
 	q.Set("action", "query")
+	q.Set("generator", "search")
+	q.Set("gsrsearch", phrase)
+	q.Set("gsrlimit", strconv.Itoa(limit))
 	q.Set("prop", "langlinks")
 	q.Set("lllang", dst)
-	q.Set("titles", title)
 
 	resp, err := apiCall(&q, src)
 	if err != nil {
@@ -113,4 +159,3 @@ func TranslateTitle(title string, src string, dst string) ([]string, error) {
 
 	return result, nil
 }
-
