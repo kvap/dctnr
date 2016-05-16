@@ -74,18 +74,20 @@ func apiCall(q *url.Values, langcode string) (*ApiResponse, error) {
 func GetLanguages() (*map[string]string, error) {
 	if languages == nil {
 		ls := make(map[string]string)
-		ls["en"] = "English"
-		ls["ru"] = "Russian"
+		ls["en" ] = "English"     // English
+		ls["sv" ] = "Swedish"     // Svenska
+		ls["ceb"] = "Cebuano"     // Sinugboanong Binisaya
+		ls["de" ] = "German"      // Deutsch
+		ls["nl" ] = "Dutch"       // Nederlands
+		ls["fr" ] = "French"      // Français
+		ls["ru" ] = "Russian"     // Русский
+		ls["it" ] = "Italian"     // Italiano
+		ls["war"] = "Waray-Waray" // Winaray
+		ls["es" ] = "Spanish"     // Español
+		ls["pl" ] = "Polish"      // Polski
+		ls["vi" ] = "Vietnamese"  // Tiếng Việt
+		ls["ja" ] = "Japanese"    // 日本語
 		languages = &ls
-//		q := url.Values{}
-//
-//		q.Set("format", "json")
-//		q.Set("formatversion", "2")
-//
-//		q.Set("action", "languagesearch")
-//
-//		resp, err := apiCall(&q, langcode)
-//		apiCall(&q, "en")
 	}
 	return languages, nil
 }
