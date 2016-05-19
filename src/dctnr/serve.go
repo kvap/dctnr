@@ -8,6 +8,8 @@ import (
 	"github.com/gocraft/web"
 	"dctnr/db"
 	"dctnr/mwapi"
+	"time"
+	"encoding/json"
 )
 
 type Context struct {
@@ -47,6 +49,7 @@ func (c *Context) Search(rw web.ResponseWriter, req *web.Request) {
 	phrase := q.Get("phrase")
 	src := q.Get("src")
 	dst := q.Get("dst")
+	maxage := 24 * time.Hour
 
 	if err := checkSearchRequest(phrase, src, dst); err != nil {
 		rw.WriteHeader(http.StatusBadRequest)
@@ -54,31 +57,53 @@ func (c *Context) Search(rw web.ResponseWriter, req *web.Request) {
 		return
 	}
 
-	limit := 5
-	titles, err := mwapi.SearchLanglinks(phrase, src, dst, limit)
+	response, cached := db.GetCached(phrase, src, dst, maxage)
+	db.LogAccess(req.RemoteAddr, phrase, src, dst, cached)
+	if !cached {
+		limit := 5
+		titles, err := mwapi.SearchLanglinks(phrase, src, dst, limit)
+		if err != nil {
+			rw.WriteHeader(http.StatusInternalServerError)
+			rw.Write([]byte(err.Error()))
+			return
+		}
+
+		paragraphs := make([]string, 0)
+		for _, t := range titles {
+			newpars, err := mwapi.GetFirstParagraph(t, dst)
+			if err != nil {
+				rw.WriteHeader(http.StatusInternalServerError)
+				rw.Write([]byte(err.Error()))
+				return
+			}
+			paragraphs = append(paragraphs, newpars...)
+		}
+
+		response = strings.Join(paragraphs, "")
+		db.PutCached(phrase, src, dst, response)
+	}
+
+	rw.WriteHeader(http.StatusOK)
+	rw.Write([]byte(response))
+}
+
+func (c *Context) Stats(rw web.ResponseWriter, req *web.Request) {
+	stats, err := db.GetStats()
 	if err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 		rw.Write([]byte(err.Error()))
 		return
 	}
 
-	paragraphs := make([]string, 0)
-	for _, t := range titles {
-		newpars, err := mwapi.GetFirstParagraph(t, dst)
-		if err != nil {
-			rw.WriteHeader(http.StatusInternalServerError)
-			rw.Write([]byte(err.Error()))
-			return
-		}
-		paragraphs = append(paragraphs, newpars...)
+	body, err := json.MarshalIndent(stats, "", "    ")
+	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		rw.Write([]byte(err.Error()))
+		return
 	}
 
 	rw.WriteHeader(http.StatusOK)
-	rw.Write([]byte(strings.Join(paragraphs, "")))
-}
-
-func (c *Context) Stats(rw web.ResponseWriter, req *web.Request) {
-	fmt.Println(strings.Repeat("Stats ", c.HelloCount), "World! ")
+	rw.Write(body)
 }
 
 func (c *Context) Main(rw web.ResponseWriter, req *web.Request) {
