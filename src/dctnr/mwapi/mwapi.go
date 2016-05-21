@@ -20,6 +20,7 @@ type ApiPage struct {
 	Title     string        `json:"title"`
 	Langlinks []ApiLangLink `json:"langlinks"`
 	Extract   string        `json:"extract"`
+	FullURL   string        `json:"fullurl"`
 }
 
 type ApiFromTo struct {
@@ -100,10 +101,11 @@ func GetFirstParagraphs(titles []string, langcode string) ([]string, error) {
 	q.Set("redirects", "")
 
 	q.Set("action", "query")
-	q.Set("prop", "extracts")
+	q.Set("prop", "extracts|info")
 	q.Set("exintro", "")
 	q.Set("exlimit", "max")
 	q.Set("exchars", "1024")
+	q.Set("inprop", "url")
 	q.Set("titles", strings.Join(titles, "|"))
 
 	resp, err := apiCall(&q, langcode)
@@ -115,19 +117,9 @@ func GetFirstParagraphs(titles []string, langcode string) ([]string, error) {
 	for _, page := range resp.Query.Pages {
 		fmt.Printf("page: %d: %s\n", page.Pageid, page.Title)
 
-		absurl := fmt.Sprintf(
-			"https://%s.wikipedia.org/wiki/%s",
-			langcode, page.Title,
-		)
-
-		//trimmed := strings.TrimSuffix(page.Extract, "...")
-		//if trimmed == "" {
-		//	trimmed = page.Title
-		//}
-
 		wrapped := fmt.Sprintf(
 			"<a href=\"%s\">%s</a>",
-			absurl, page.Extract,
+			page.FullURL, page.Extract,
 		)
 		result = append(result, wrapped)
 	}
