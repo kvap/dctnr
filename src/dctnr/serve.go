@@ -68,15 +68,11 @@ func (c *Context) Search(rw web.ResponseWriter, req *web.Request) {
 			return
 		}
 
-		paragraphs := make([]string, 0)
-		for _, t := range titles {
-			newpars, err := mwapi.GetFirstParagraph(t, dst)
-			if err != nil {
-				rw.WriteHeader(http.StatusInternalServerError)
-				rw.Write([]byte(err.Error()))
-				return
-			}
-			paragraphs = append(paragraphs, newpars...)
+		paragraphs, err := mwapi.GetFirstParagraphs(titles, dst)
+		if err != nil {
+			rw.WriteHeader(http.StatusInternalServerError)
+			rw.Write([]byte(err.Error()))
+			return
 		}
 
 		response = strings.Join(paragraphs, "")

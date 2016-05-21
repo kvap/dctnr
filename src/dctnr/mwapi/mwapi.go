@@ -92,7 +92,7 @@ func GetLanguages() (*map[string]string, error) {
 	return languages, nil
 }
 
-func GetFirstParagraph(title string, langcode string) ([]string, error) {
+func GetFirstParagraphs(titles []string, langcode string) ([]string, error) {
 	q := url.Values{}
 
 	q.Set("format", "json")
@@ -102,8 +102,9 @@ func GetFirstParagraph(title string, langcode string) ([]string, error) {
 	q.Set("action", "query")
 	q.Set("prop", "extracts")
 	q.Set("exintro", "")
+	q.Set("exlimit", "max")
 	q.Set("exchars", "1024")
-	q.Set("titles", title)
+	q.Set("titles", strings.Join(titles, "|"))
 
 	resp, err := apiCall(&q, langcode)
 	if err != nil {
@@ -119,14 +120,14 @@ func GetFirstParagraph(title string, langcode string) ([]string, error) {
 			langcode, page.Title,
 		)
 
-		trimmed := strings.TrimSuffix(page.Extract, "…")
-		if trimmed == "" {
-			trimmed = page.Title
-		}
+		//trimmed := strings.TrimSuffix(page.Extract, "...")
+		//if trimmed == "" {
+		//	trimmed = page.Title
+		//}
 
 		wrapped := fmt.Sprintf(
 			"<a href=\"%s\">%s</a>",
-			absurl, trimmed,
+			absurl, page.Extract,
 		)
 		result = append(result, wrapped)
 	}
