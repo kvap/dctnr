@@ -5,25 +5,16 @@ import (
 	"strings"
 	"errors"
 	"net/http"
-	"github.com/gocraft/web"
-	"dctnr/db"
-	"dctnr/mwapi"
 	"time"
 	"encoding/json"
+
+	"github.com/gocraft/web"
+
+	"github.com/kvap/dctnr/db"
+	"github.com/kvap/dctnr/mwapi"
 )
 
 type Context struct {
-	HelloCount int
-}
-
-func (c *Context) PingDB(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	err := db.Ping()
-	if err != nil {
-		rw.WriteHeader(http.StatusInternalServerError)
-		rw.Write([]byte("db unavailable: " + err.Error()))
-		return
-	}
-	next(rw, req)
 }
 
 func checkSearchRequest(phrase, src, dst string) error {
@@ -103,7 +94,7 @@ func (c *Context) Stats(rw web.ResponseWriter, req *web.Request) {
 }
 
 func (c *Context) Main(rw web.ResponseWriter, req *web.Request) {
-	fmt.Println(strings.Repeat("Main ", c.HelloCount), "World! ")
+	http.Redirect(rw, req.Request, "/index.html", http.StatusFound)
 }
 
 func main() {
@@ -114,7 +105,6 @@ func main() {
 	router.Middleware(web.LoggerMiddleware)
 	router.Middleware(web.ShowErrorsMiddleware)
 	router.Middleware(web.StaticMiddleware("static"))
-	router.Middleware((*Context).PingDB)
 
 	router.Get("/search", (*Context).Search)
 	router.Get("/stats", (*Context).Stats)
