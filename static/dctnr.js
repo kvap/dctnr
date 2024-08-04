@@ -52,7 +52,7 @@ async function handleSubmit(evt) {
 
 	header.classList.remove('maximized');
 	veil.style.display = 'none';
-	output.style.display = 'block';
+	output.classList.add('visible');
 }
 
 input.addEventListener('submit', handleSubmit, false);
