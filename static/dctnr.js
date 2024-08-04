@@ -22,33 +22,37 @@ function get(url, c_ok, c_fail) {
 }
 
 function search(phrase, src, dst, c_ok, c_fail) {
-	var url = 'search?phrase=' + encodeURIComponent(phrase);
-	url += '&src=' + encodeURIComponent(src);
-	url += '&dst=' + encodeURIComponent(dst);
 	console.log('querying ' + url);
 	get(url, c_ok, c_fail);
 }
 
-function handleSubmit(evt) {
+async function handleSubmit(evt) {
 	evt.preventDefault();
-	var phrase = document.getElementById('input-phrase').value;
-	var src = document.getElementById('input-src').value;
-	var dst = document.getElementById('input-dst').value;
+
 	output.innerHTML = '';
 	veil.style.display = 'block';
-	search(phrase, src, dst, function(data) {
-		console.log('succeeded');
-		output.innerHTML = data;
-		header.classList.remove('maximized');
-		veil.style.display = 'none';
-		output.style.display = 'block';
-	}, function(data) {
+
+	const params = new URLSearchParams();
+	params.set('src', document.getElementById('input-src').value);
+	params.set('dst', document.getElementById('input-dst').value);
+	params.set('query', document.getElementById('input-query').value);
+
+	const resp = await fetch(`/search?${params}`);
+	if (resp.ok) {
+		for (const p of await resp.json()) {
+			const a = document.createElement('a');
+			a.appendChild(document.createTextNode(p.extract));
+			a.title = p.title;
+			a.href = p.url;
+			output.appendChild(a);
+		}
+	} else {
 		console.log('failed');
-		output.innerHTML = data;
-		header.classList.remove('maximized');
-		veil.style.display = 'none';
-		output.style.display = 'block';
-	});
+	}
+
+	header.classList.remove('maximized');
+	veil.style.display = 'none';
+	output.style.display = 'block';
 }
 
 input.addEventListener('submit', handleSubmit, false);
